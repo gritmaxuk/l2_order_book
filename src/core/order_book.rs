@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use ordered_float::OrderedFloat;
 use serde::Deserialize;
+use log::{info, warn};
 
 use crate::network::messages::OrderBookUpdate;
 
@@ -42,10 +43,12 @@ impl OrderBook {
             self.bids.insert(price, order);
             self.update_best_bid();
             self.enforce_depth_limit("buy");
+            info!("Added order to bids: {:?}", self.bids.get(&price));
         } else if side == "sell" {
             self.asks.insert(price, order);
             self.update_best_ask();
             self.enforce_depth_limit("sell");
+            info!("Added order to asks: {:?}", self.asks.get(&price));
         }
     }
 
@@ -54,9 +57,11 @@ impl OrderBook {
         if side == "buy" {
             self.bids.remove(&price);
             self.update_best_bid();
+            warn!("Removed order from bids at price: {:?}", price);
         } else if side == "sell" {
             self.asks.remove(&price);
             self.update_best_ask();
+            warn!("Removed order from asks at price: {:?}", price);
         }
     }
 
@@ -82,6 +87,7 @@ impl OrderBook {
 
         self.update_best_bid();
         self.update_best_ask();
+        info!("Processed snapshot. Best Bid: {:?}, Best Ask: {:?}", self.best_bid, self.best_ask);
     }
 
     pub fn process_update(&mut self, update: OrderBookUpdate) {
@@ -109,11 +115,13 @@ impl OrderBook {
             while self.bids.len() > self.depth_limit {
                 let lowest_bid = self.bids.keys().next().cloned().unwrap();
                 self.bids.remove(&lowest_bid);
+                warn!("Enforced depth limit on bids, removed order at price: {:?}", lowest_bid);
             }
         } else if side == "sell" {
             while self.asks.len() > self.depth_limit {
                 let highest_ask = self.asks.keys().rev().next().cloned().unwrap();
                 self.asks.remove(&highest_ask);
+                warn!("Enforced depth limit on asks, removed order at price: {:?}", highest_ask);
             }
         }
     }
