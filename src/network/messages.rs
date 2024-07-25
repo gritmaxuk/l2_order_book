@@ -7,13 +7,13 @@ pub struct OrderBookUpdate {
     pub side: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct OrderBookSnapshot {
     pub bids: Vec<OrderBookUpdate>,
     pub asks: Vec<OrderBookUpdate>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum Message {
     Update(OrderBookUpdate),

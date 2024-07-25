@@ -1,6 +1,6 @@
 pub mod order_book;
 
-use crate::network::messages::OrderBookUpdate;
+pub use crate::network::messages::OrderBookUpdate;
 use order_book::{OrderBook, Order};
 use tokio::sync::RwLock;
 use std::sync::Arc;

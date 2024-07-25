@@ -1,4 +1,4 @@
 [exchange]
-url = "wss://your-selected-exchange.com/websocket"
-depth_limit = 10
-instrument = "BTC-PERPETUAL"
+url = "wss://your-selected-exchange.com/websocket" # todo: remove as I use soecial lib
+depth_limit = 10 # todo: check properly how it works.
+instrument = "BTC-PERPETUAL" # todo: it does not work by default

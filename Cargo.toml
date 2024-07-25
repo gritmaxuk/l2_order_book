@@ -17,3 +17,6 @@ thiserror = "1.0"
 ordered-float = "4.2.1"
 log = "0.4"
 env_logger = "0.11.4"
+anyhow = "1.0.86"
+futures = {version = "0.3", features = ["async-await"]}
+deribit = "0.3.3"
