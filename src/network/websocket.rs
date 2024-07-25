@@ -2,8 +2,9 @@ use tokio_tungstenite::{connect_async, tungstenite::protocol::Message as WsMessa
 use futures_util::{StreamExt, SinkExt};
 use serde_json::Value;
 use crate::network::messages::{Message, OrderBookUpdate, OrderBookSnapshot};
+use crate::core::SharedOrderBook;
 
-pub async fn connect(url: &str) -> tokio_tungstenite::tungstenite::Result<()> {
+pub async fn connect(url: &str, order_book: SharedOrderBook) -> tokio_tungstenite::tungstenite::Result<()> {
     let (ws_stream, _) = connect_async(url).await?;
     let (mut write, mut read) = ws_stream.split();
 
@@ -17,7 +18,7 @@ pub async fn connect(url: &str) -> tokio_tungstenite::tungstenite::Result<()> {
             Ok(msg) => {
                 if let Ok(text) = msg.to_text() {
                     match serde_json::from_str::<Message>(text) {
-                        Ok(parsed_msg) => handle_message(parsed_msg),
+                        Ok(parsed_msg) => handle_message(parsed_msg, &order_book).await,
                         Err(e) => eprintln!("Failed to parse message: {:?}", e),
                     }
                 }
@@ -29,19 +30,17 @@ pub async fn connect(url: &str) -> tokio_tungstenite::tungstenite::Result<()> {
     Ok(())
 }
 
-fn handle_message(msg: Message) {
+async fn handle_message(msg: Message, order_book: &SharedOrderBook) {
     match msg {
-        Message::Update(update) => handle_update(update),
-        Message::Snapshot(snapshot) => handle_snapshot(snapshot),
+        Message::Update(update) => handle_update(update, order_book).await,
+        Message::Snapshot(snapshot) => handle_snapshot(snapshot, order_book).await,
     }
 }
 
-fn handle_update(update: OrderBookUpdate) {
-    println!("Update received: {:?}", update);
-    // Process the update message
+async fn handle_update(update: OrderBookUpdate, order_book: &SharedOrderBook) {
+    order_book.process_update(update).await;
 }
 
-fn handle_snapshot(snapshot: OrderBookSnapshot) {
-    println!("Snapshot received: {:?}", snapshot);
-    // Process the snapshot message
+async fn handle_snapshot(snapshot: OrderBookSnapshot, order_book: &SharedOrderBook) {
+    order_book.process_snapshot(snapshot.bids, snapshot.asks).await;
 }

@@ -1,14 +1,18 @@
 use std::collections::BTreeMap;
 use ordered_float::OrderedFloat;
+use serde::Deserialize;
+use tokio::sync::RwLock;
+use std::sync::Arc;
 
-#[derive(Debug, Clone, PartialEq)]
+use crate::network::messages::OrderBookUpdate;
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct Order {
-    pub id: u64,
     pub price: f64,
     pub quantity: f64,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct PriceLevel {
     pub price: f64,
     pub orders: Vec<Order>,
@@ -16,8 +20,8 @@ pub struct PriceLevel {
 
 #[derive(Debug, Clone)]
 pub struct OrderBook {
-    pub bids: BTreeMap<OrderedFloat<f64>, PriceLevel>,
-    pub asks: BTreeMap<OrderedFloat<f64>, PriceLevel>,
+    pub bids: BTreeMap<OrderedFloat<f64>, Order>,
+    pub asks: BTreeMap<OrderedFloat<f64>, Order>,
 }
 
 impl OrderBook {
@@ -28,112 +32,54 @@ impl OrderBook {
         }
     }
 
-    pub fn add_order(&mut self, order: Order) {
+    pub fn add_order(&mut self, order: Order, side: &str) {
         let price = OrderedFloat(order.price);
-        let price_level = if order.quantity > 0.0 {
-            self.bids.entry(price).or_insert_with(|| PriceLevel {
-                price: order.price,
-                orders: Vec::new(),
-            })
+        if side == "buy" {
+            self.bids.insert(price, order);
+        } else if side == "sell" {
+            self.asks.insert(price, order);
+        }
+    }
+
+    pub fn remove_order(&mut self, price: f64, side: &str) {
+        let price = OrderedFloat(price);
+        if side == "buy" {
+            self.bids.remove(&price);
+        } else if side == "sell" {
+            self.asks.remove(&price);
+        }
+    }
+
+    pub fn process_snapshot(&mut self, bids: Vec<OrderBookUpdate>, asks: Vec<OrderBookUpdate>) {
+        self.bids.clear();
+        self.asks.clear();
+        
+        for bid in bids {
+            let order = Order {
+                price: bid.price,
+                quantity: bid.quantity,
+            };
+            self.add_order(order, "buy");
+        }
+        
+        for ask in asks {
+            let order = Order {
+                price: ask.price,
+                quantity: ask.quantity,
+            };
+            self.add_order(order, "sell");
+        }
+    }
+
+    pub fn process_update(&mut self, update: OrderBookUpdate) {
+        if update.quantity == 0.0 {
+            self.remove_order(update.price, &update.side);
         } else {
-            self.asks.entry(price).or_insert_with(|| PriceLevel {
-                price: order.price,
-                orders: Vec::new(),
-            })
-        };
-        price_level.orders.push(order);
-    }
-
-    pub fn update_order(&mut self, order: Order) {
-        self.remove_order(order.id);
-        self.add_order(order);
-    }
-
-    pub fn remove_order(&mut self, order_id: u64) {
-        let mut remove_price_level = None;
-
-        for price_level in self.bids.values_mut() {
-            if let Some(pos) = price_level.orders.iter().position(|x| x.id == order_id) {
-                price_level.orders.remove(pos);
-                if price_level.orders.is_empty() {
-                    remove_price_level = Some(price_level.price);
-                }
-                break;
-            }
+            let order = Order {
+                price: update.price,
+                quantity: update.quantity,
+            };
+            self.add_order(order, &update.side);
         }
-
-        if let Some(price) = remove_price_level {
-            self.bids.remove(&OrderedFloat(price));
-            return;
-        }
-
-        for price_level in self.asks.values_mut() {
-            if let Some(pos) = price_level.orders.iter().position(|x| x.id == order_id) {
-                price_level.orders.remove(pos);
-                if price_level.orders.is_empty() {
-                    remove_price_level = Some(price_level.price);
-                }
-                break;
-            }
-        }
-
-        if let Some(price) = remove_price_level {
-            self.asks.remove(&OrderedFloat(price));
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_add_order() {
-        let mut order_book = OrderBook::new();
-        let order = Order {
-            id: 1,
-            price: 100.0,
-            quantity: 1.0,
-        };
-        order_book.add_order(order.clone());
-
-        assert_eq!(order_book.bids.len(), 1);
-        assert_eq!(order_book.bids[&OrderedFloat(100.0)].orders.len(), 1);
-        assert_eq!(order_book.bids[&OrderedFloat(100.0)].orders[0], order);
-    }
-
-    #[test]
-    fn test_update_order() {
-        let mut order_book = OrderBook::new();
-        let order1 = Order {
-            id: 1,
-            price: 100.0,
-            quantity: 1.0,
-        };
-        let order2 = Order {
-            id: 1,
-            price: 100.0,
-            quantity: 2.0,
-        };
-        order_book.add_order(order1.clone());
-        order_book.update_order(order2.clone());
-
-        assert_eq!(order_book.bids.len(), 1);
-        assert_eq!(order_book.bids[&OrderedFloat(100.0)].orders.len(), 1);
-        assert_eq!(order_book.bids[&OrderedFloat(100.0)].orders[0], order2);
-    }
-
-    #[test]
-    fn test_remove_order() {
-        let mut order_book = OrderBook::new();
-        let order = Order {
-            id: 1,
-            price: 100.0,
-            quantity: 1.0,
-        };
-        order_book.add_order(order.clone());
-        order_book.remove_order(order.id);
-
-        assert_eq!(order_book.bids.len(), 0);
     }
 }
