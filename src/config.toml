@@ -1,2 +1,3 @@
 [exchange]
 url = "wss://your-selected-exchange.com/websocket"
+depth_limit = 10

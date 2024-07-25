@@ -11,9 +11,9 @@ pub struct SharedOrderBook {
 }
 
 impl SharedOrderBook {
-    pub fn new() -> Self {
+    pub fn new(depth_limit: usize) -> Self {
         SharedOrderBook {
-            inner: Arc::new(RwLock::new(OrderBook::new())),
+            inner: Arc::new(RwLock::new(OrderBook::new(depth_limit))),
         }
     }
 

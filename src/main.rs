@@ -12,9 +12,10 @@ fn main() {
         
         let config = Config::from_file("config.toml");
         let url = config.exchange.url;
+        let depth_limit = config.exchange.depth_limit;
 
         let rt = Runtime::new().unwrap();
-        let order_book = SharedOrderBook::new();
+        let order_book = SharedOrderBook::new(depth_limit);
 
         rt.block_on(async {
             match connect(&url, order_book.clone()).await {

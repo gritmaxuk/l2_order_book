@@ -1,8 +1,6 @@
 use std::collections::BTreeMap;
 use ordered_float::OrderedFloat;
 use serde::Deserialize;
-use tokio::sync::RwLock;
-use std::sync::Arc;
 
 use crate::network::messages::OrderBookUpdate;
 
@@ -24,15 +22,17 @@ pub struct OrderBook {
     pub asks: BTreeMap<OrderedFloat<f64>, Order>,
     pub best_bid: Option<f64>,
     pub best_ask: Option<f64>,
+    pub depth_limit: usize,
 }
 
 impl OrderBook {
-    pub fn new() -> Self {
+    pub fn new(depth_limit: usize) -> Self {
         OrderBook {
             bids: BTreeMap::new(),
             asks: BTreeMap::new(),
             best_bid: None,
             best_ask: None,
+            depth_limit,
         }
     }
 
@@ -41,9 +41,11 @@ impl OrderBook {
         if side == "buy" {
             self.bids.insert(price, order);
             self.update_best_bid();
+            self.enforce_depth_limit("buy");
         } else if side == "sell" {
             self.asks.insert(price, order);
             self.update_best_ask();
+            self.enforce_depth_limit("sell");
         }
     }
 
@@ -100,6 +102,20 @@ impl OrderBook {
 
     fn update_best_ask(&mut self) {
         self.best_ask = self.asks.keys().next().map(|p| p.into_inner());
+    }
+
+    fn enforce_depth_limit(&mut self, side: &str) {
+        if side == "buy" {
+            while self.bids.len() > self.depth_limit {
+                let lowest_bid = self.bids.keys().next().cloned().unwrap();
+                self.bids.remove(&lowest_bid);
+            }
+        } else if side == "sell" {
+            while self.asks.len() > self.depth_limit {
+                let highest_ask = self.asks.keys().rev().next().cloned().unwrap();
+                self.asks.remove(&highest_ask);
+            }
+        }
     }
 
     pub fn get_best_bid(&self) -> Option<f64> {

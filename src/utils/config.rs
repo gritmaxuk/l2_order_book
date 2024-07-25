@@ -9,6 +9,7 @@ pub struct Config {
 #[derive(Deserialize)]
 pub struct ExchangeConfig {
     pub url: String,
+    pub depth_limit: usize,
 }
 
 impl Config {
