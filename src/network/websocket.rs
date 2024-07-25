@@ -5,16 +5,16 @@ use crate::network::messages::{Message, OrderBookUpdate, OrderBookSnapshot};
 use crate::core::SharedOrderBook;
 use log::{info, error};
 
-pub async fn connect(url: &str, order_book: SharedOrderBook) -> tokio_tungstenite::tungstenite::Result<()> {
+pub async fn connect(url: &str, instrument: String, order_book: SharedOrderBook) -> tokio_tungstenite::tungstenite::Result<()> {
     let (ws_stream, _) = connect_async(url).await?;
     let (mut write, mut read) = ws_stream.split();
 
     info!("WebSocket connection established");
 
-    // Example: Sending a subscription message
-    let subscription_msg = r#"{"type": "subscribe", "channel": "orderbook"}"#;
+    // Sending a subscription message with the instrument
+    let subscription_msg = format!(r#"{{"type": "subscribe", "channel": "orderbook", "instrument": "{}"}}"#, instrument);
     write.send(WsMessage::Text(subscription_msg.into())).await?;
-    info!("Subscription message sent");
+    info!("Subscription message sent for instrument: {}", instrument);
 
     // Reading messages
     while let Some(msg) = read.next().await {

@@ -20,7 +20,7 @@ pub struct PriceLevel {
 #[derive(Debug, Clone)]
 pub struct OrderBook {
     pub bids: BTreeMap<OrderedFloat<f64>, Order>,
-    pub asks: BTreeMap<OrderedFloat<f64>, Order>,
+    pub asks: BTreeMap<OrderedFloat<f64>, Order>, // todo: BTreeMap as HashMap?
     pub best_bid: Option<f64>,
     pub best_ask: Option<f64>,
     pub depth_limit: usize,

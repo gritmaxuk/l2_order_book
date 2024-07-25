@@ -10,12 +10,13 @@ mod integration_tests {
         let config = Config::from_file("config.toml");
         let url = config.exchange.url;
         let depth_limit = config.exchange.depth_limit;
+        let instrument = config.exchange.instrument.clone().unwrap_or_else(|| "BTC-PERPETUAL".to_string());
 
         let rt = Runtime::new().unwrap();
         let order_book = SharedOrderBook::new(depth_limit);
 
         rt.block_on(async {
-            match connect(&url, order_book.clone()).await {
+            match connect(&url, instrument, order_book.clone()).await {
                 Ok(_) => {
                     if let Some(best_bid) = order_book.get_best_bid().await {
                         println!("Best Bid: {}", best_bid);

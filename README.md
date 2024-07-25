@@ -1,5 +1,7 @@
 # L2 Order Book
 
+[] made  /public/subscribe and graceful /public/unsubscribe
+
 ## Project Description
 
 This project implements a Level 2 (L2) order book that streams real-time market data from a specified exchange using WebSocket connections. The order book maintains the best bid and offer prices and enforces a configurable depth limit. The project includes command-line interface (CLI) support for configuration, logging for activity tracking, and comprehensive unit and integration tests to ensure correctness.

@@ -10,6 +10,7 @@ pub struct Config {
 pub struct ExchangeConfig {
     pub url: String,
     pub depth_limit: usize,
+    pub instrument: Option<String>, 
 }
 
 impl Config {
