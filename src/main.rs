@@ -17,8 +17,16 @@ fn main() {
         let order_book = SharedOrderBook::new();
 
         rt.block_on(async {
-            match connect(&url, order_book).await {
-                Ok(_) => println!("Connection successful"),
+            match connect(&url, order_book.clone()).await {
+                Ok(_) => {
+                    println!("Connection successful");
+                    if let Some(best_bid) = order_book.get_best_bid().await {
+                        println!("Best Bid: {}", best_bid);
+                    }
+                    if let Some(best_ask) = order_book.get_best_ask().await {
+                        println!("Best Ask: {}", best_ask);
+                    }
+                },
                 Err(e) => eprintln!("Connection error: {:?}", e),
             }
         });

@@ -22,6 +22,8 @@ pub struct PriceLevel {
 pub struct OrderBook {
     pub bids: BTreeMap<OrderedFloat<f64>, Order>,
     pub asks: BTreeMap<OrderedFloat<f64>, Order>,
+    pub best_bid: Option<f64>,
+    pub best_ask: Option<f64>,
 }
 
 impl OrderBook {
@@ -29,6 +31,8 @@ impl OrderBook {
         OrderBook {
             bids: BTreeMap::new(),
             asks: BTreeMap::new(),
+            best_bid: None,
+            best_ask: None,
         }
     }
 
@@ -36,8 +40,10 @@ impl OrderBook {
         let price = OrderedFloat(order.price);
         if side == "buy" {
             self.bids.insert(price, order);
+            self.update_best_bid();
         } else if side == "sell" {
             self.asks.insert(price, order);
+            self.update_best_ask();
         }
     }
 
@@ -45,8 +51,10 @@ impl OrderBook {
         let price = OrderedFloat(price);
         if side == "buy" {
             self.bids.remove(&price);
+            self.update_best_bid();
         } else if side == "sell" {
             self.asks.remove(&price);
+            self.update_best_ask();
         }
     }
 
@@ -69,6 +77,9 @@ impl OrderBook {
             };
             self.add_order(order, "sell");
         }
+
+        self.update_best_bid();
+        self.update_best_ask();
     }
 
     pub fn process_update(&mut self, update: OrderBookUpdate) {
@@ -81,5 +92,21 @@ impl OrderBook {
             };
             self.add_order(order, &update.side);
         }
+    }
+
+    fn update_best_bid(&mut self) {
+        self.best_bid = self.bids.keys().rev().next().map(|p| p.into_inner());
+    }
+
+    fn update_best_ask(&mut self) {
+        self.best_ask = self.asks.keys().next().map(|p| p.into_inner());
+    }
+
+    pub fn get_best_bid(&self) -> Option<f64> {
+        self.best_bid
+    }
+
+    pub fn get_best_ask(&self) -> Option<f64> {
+        self.best_ask
     }
 }
