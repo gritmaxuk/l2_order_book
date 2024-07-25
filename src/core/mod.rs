@@ -41,3 +41,34 @@ impl SharedOrderBook {
         self.inner.read().await
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::network::messages::OrderBookUpdate;
+
+    #[tokio::test]
+    async fn test_shared_order_book() {
+        let shared_order_book = SharedOrderBook::new(10);
+
+        let update = OrderBookUpdate {
+            price: 100.0,
+            quantity: 1.0,
+            side: "buy".to_string(),
+        };
+
+        shared_order_book.process_update(update.clone()).await;
+        let best_bid = shared_order_book.get_best_bid().await;
+        assert_eq!(best_bid, Some(100.0));
+
+        let update_remove = OrderBookUpdate {
+            price: 100.0,
+            quantity: 0.0,
+            side: "buy".to_string(),
+        };
+
+        shared_order_book.process_update(update_remove).await;
+        let best_bid = shared_order_book.get_best_bid().await;
+        assert_eq!(best_bid, None);
+    }
+}

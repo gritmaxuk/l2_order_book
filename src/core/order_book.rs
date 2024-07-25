@@ -134,3 +134,117 @@ impl OrderBook {
         self.best_ask
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_add_order() {
+        let mut order_book = OrderBook::new(10);
+        let order = Order {
+            price: 100.0,
+            quantity: 1.0,
+        };
+        order_book.add_order(order.clone(), "buy");
+
+        assert_eq!(order_book.bids.len(), 1);
+        assert_eq!(order_book.bids[&OrderedFloat(100.0)], order);
+    }
+
+    #[test]
+    fn test_remove_order() {
+        let mut order_book = OrderBook::new(10);
+        let order = Order {
+            price: 100.0,
+            quantity: 1.0,
+        };
+        order_book.add_order(order.clone(), "buy");
+        order_book.remove_order(100.0, "buy");
+
+        assert_eq!(order_book.bids.len(), 0);
+    }
+
+    #[test]
+    fn test_process_snapshot() {
+        let mut order_book = OrderBook::new(10);
+        let bids = vec![
+            OrderBookUpdate {
+                price: 100.0,
+                quantity: 1.0,
+                side: "buy".to_string(),
+            },
+            OrderBookUpdate {
+                price: 101.0,
+                quantity: 2.0,
+                side: "buy".to_string(),
+            },
+        ];
+        let asks = vec![
+            OrderBookUpdate {
+                price: 102.0,
+                quantity: 1.0,
+                side: "sell".to_string(),
+            },
+            OrderBookUpdate {
+                price: 103.0,
+                quantity: 2.0,
+                side: "sell".to_string(),
+            },
+        ];
+
+        order_book.process_snapshot(bids, asks);
+
+        assert_eq!(order_book.bids.len(), 2);
+        assert_eq!(order_book.asks.len(), 2);
+        assert_eq!(order_book.best_bid, Some(101.0));
+        assert_eq!(order_book.best_ask, Some(102.0));
+    }
+
+    #[test]
+    fn test_process_update() {
+        let mut order_book = OrderBook::new(10);
+        let update = OrderBookUpdate {
+            price: 100.0,
+            quantity: 1.0,
+            side: "buy".to_string(),
+        };
+
+        order_book.process_update(update.clone());
+        assert_eq!(order_book.bids.len(), 1);
+        assert_eq!(order_book.bids[&OrderedFloat(100.0)].quantity, 1.0);
+
+        let update_remove = OrderBookUpdate {
+            price: 100.0,
+            quantity: 0.0,
+            side: "buy".to_string(),
+        };
+        order_book.process_update(update_remove);
+        assert_eq!(order_book.bids.len(), 0);
+    }
+
+    #[test]
+    fn test_enforce_depth_limit() {
+        let mut order_book = OrderBook::new(2);
+        let order1 = Order {
+            price: 100.0,
+            quantity: 1.0,
+        };
+        let order2 = Order {
+            price: 101.0,
+            quantity: 1.0,
+        };
+        let order3 = Order {
+            price: 102.0,
+            quantity: 1.0,
+        };
+        order_book.add_order(order1, "buy");
+        order_book.add_order(order2, "buy");
+        order_book.add_order(order3, "buy");
+
+        assert_eq!(order_book.bids.len(), 2);
+        assert!(order_book.bids.contains_key(&OrderedFloat(101.0)));
+        assert!(order_book.bids.contains_key(&OrderedFloat(102.0)));
+        assert!(!order_book.bids.contains_key(&OrderedFloat(100.0)));
+    }
+}
