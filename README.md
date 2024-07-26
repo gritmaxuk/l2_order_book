@@ -1,6 +1,12 @@
 # L2 Order Book
 
+// todo: update
+
 [] made  /public/subscribe and graceful /public/unsubscribe
+
+https://docs.deribit.com/#book-instrument_name-group-depth-interval
+
+
 
 ## Project Description
 

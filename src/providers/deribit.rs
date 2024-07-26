@@ -1,21 +1,21 @@
 use anyhow::Error;
 use deribit::{models::{PublicSubscribeRequest, SubscriptionData, SubscriptionMessage, SubscriptionParams, WithChannel}, DeribitSubscriptionClient, DeribitAPIClient};
 use futures::StreamExt;
-use crate::core::{messages::OrderBookUpdate, SharedOrderBook};
-use log::{info, error};
+use crate::{core::{messages::OrderBookUpdate, SharedOrderBook}, utils::config::ExchangeConfig};
+use log::{debug, error, info};
 
-pub async fn subscribe_to_order_book(order_book: SharedOrderBook, instrument: &str) -> Result<(), Error> {
+pub async fn subscribe_to_order_book(order_book: SharedOrderBook, config: &ExchangeConfig) -> Result<(), Error> {
     let (mut client, mut subscription) = create_client().await?;
     
-    subscribe_to_instrument(instrument, &mut client).await?;
+    subscribe_to_instrument(config, &mut client).await?;
     while let Some(message) = subscription.next().await {
         match message {
             Ok(subscription_meassage) => {
 
                 match parse(subscription_meassage) {
                     Some((bids, asks)) => { 
-                        order_book.process_snapshot(bids, asks).await;
-                        info!("Order book updated for instrument: {}", instrument);
+                        order_book.process_snapshot(bids, asks).await; // snapshot update, data equal to depth limit
+                        debug!("Order book updated for instrument: {}", config.instrument.clone().unwrap());
                     },
                     None => {}
                 }
@@ -35,8 +35,11 @@ async fn create_client() -> Result<(DeribitAPIClient, DeribitSubscriptionClient)
     Ok(drb.connect().await?)
 }
 
-async fn subscribe_to_instrument(instrument: &str, client: &mut DeribitAPIClient) -> Result<(), Error> {
-    let subscription_channel = format!("book.{}.5.20.100ms", instrument);
+async fn subscribe_to_instrument(config: &ExchangeConfig, client: &mut DeribitAPIClient) -> Result<(), Error> {
+    let instrument = config.instrument.clone().unwrap();
+    let depth_limit = config.depth_limit.unwrap();
+
+    let subscription_channel = format!("book.{}.5.{}.100ms", instrument, depth_limit);
     let req = PublicSubscribeRequest::new(&[subscription_channel.into()]);
     client.call(req).await?;
     
