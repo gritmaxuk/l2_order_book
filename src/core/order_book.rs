@@ -3,7 +3,7 @@ use ordered_float::OrderedFloat;
 use serde::Deserialize;
 use log::{info, warn};
 
-use crate::network::messages::OrderBookUpdate;
+use super::messages::OrderBookUpdate;
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct Order {

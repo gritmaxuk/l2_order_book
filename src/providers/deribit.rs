@@ -1,8 +1,7 @@
 use anyhow::Error;
 use deribit::{models::{PublicSubscribeRequest, SubscriptionData, SubscriptionMessage, SubscriptionParams, WithChannel}, DeribitSubscriptionClient, DeribitAPIClient};
 use futures::StreamExt;
-use crate::core::SharedOrderBook;
-use crate::network::messages::OrderBookUpdate;
+use crate::core::{messages::OrderBookUpdate, SharedOrderBook};
 use log::{info, error};
 
 pub async fn subscribe_to_order_book(order_book: SharedOrderBook, instrument: &str) -> Result<(), Error> {

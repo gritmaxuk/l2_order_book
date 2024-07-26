@@ -1,4 +1,3 @@
-use l2_order_book::network::websocket;
 use l2_order_book::providers;
 use l2_order_book::utils::config::{Config, Provider};
 use l2_order_book::core::SharedOrderBook;

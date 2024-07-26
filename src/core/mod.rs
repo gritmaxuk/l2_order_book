@@ -1,7 +1,8 @@
 pub mod order_book;
+pub mod messages;
 
-pub use crate::network::messages::OrderBookUpdate;
-use order_book::{OrderBook, Order};
+use messages::OrderBookUpdate;
+use order_book::OrderBook;
 use tokio::sync::RwLock;
 use std::sync::Arc;
 
@@ -45,7 +46,6 @@ impl SharedOrderBook {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::network::messages::OrderBookUpdate;
 
     #[tokio::test]
     async fn test_shared_order_book() {
