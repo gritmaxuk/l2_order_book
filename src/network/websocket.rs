@@ -1,10 +1,10 @@
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message as WsMessage};
 use futures_util::{StreamExt, SinkExt};
-use serde_json::Value;
 use crate::network::messages::{Message, OrderBookUpdate, OrderBookSnapshot};
 use crate::core::SharedOrderBook;
 use log::{info, error};
 
+// todo: do I need it? 
 pub async fn connect(url: &str, instrument: String, order_book: SharedOrderBook) -> tokio_tungstenite::tungstenite::Result<()> {
     let (ws_stream, _) = connect_async(url).await?;
     let (mut write, mut read) = ws_stream.split();

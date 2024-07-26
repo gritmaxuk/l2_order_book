@@ -1,2 +1,2 @@
 pub mod commands;
-pub use commands::get_matches;
+pub use commands::get_cli_args;

@@ -20,3 +20,4 @@ env_logger = "0.11.4"
 anyhow = "1.0.86"
 futures = {version = "0.3", features = ["async-await"]}
 deribit = "0.3.3"
+envconfig = "0.10"
