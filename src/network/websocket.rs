@@ -1,22 +1,23 @@
+use futures::{SinkExt, StreamExt};
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message as WsMessage};
-use futures_util::{StreamExt, SinkExt};
 use crate::network::messages::{Message, OrderBookUpdate, OrderBookSnapshot};
 use crate::core::SharedOrderBook;
 use log::{info, error};
 
-// todo: do I need it? 
-pub async fn connect(url: &str, instrument: String, order_book: SharedOrderBook) -> tokio_tungstenite::tungstenite::Result<()> {
-    let (ws_stream, _) = connect_async(url).await?;
+const WS_URL_TESTNET: &'static str = "wss://test.deribit.com/ws/api/v2";
+
+pub async fn connect(instrument: String, order_book: SharedOrderBook) -> tokio_tungstenite::tungstenite::Result<()> {
+    let (ws_stream, _) = connect_async(WS_URL_TESTNET).await?;
     let (mut write, mut read) = ws_stream.split();
 
     info!("WebSocket connection established");
 
-    // Sending a subscription message with the instrument
+    // subscibe
     let subscription_msg = format!(r#"{{"type": "subscribe", "channel": "orderbook", "instrument": "{}"}}"#, instrument);
     write.send(WsMessage::Text(subscription_msg.into())).await?;
     info!("Subscription message sent for instrument: {}", instrument);
 
-    // Reading messages
+    // reading
     while let Some(msg) = read.next().await {
         match msg {
             Ok(msg) => {

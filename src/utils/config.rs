@@ -9,6 +9,7 @@ const DEFAULT_CONFIG_FILE: &str = "config.toml";
 
 #[derive(Deserialize, Debug, Clone, PartialEq)]
 pub enum Provider {
+    None,
     Deribit,
 }
 

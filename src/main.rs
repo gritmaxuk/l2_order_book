@@ -1,40 +1,40 @@
-use tokio::runtime::Runtime;
-use l2_order_book::utils::config::Config;
+use l2_order_book::network::websocket;
+use l2_order_book::providers;
+use l2_order_book::utils::config::{Config, Provider};
 use l2_order_book::core::SharedOrderBook;
 use log::{info, error};
-use std::env;
-use l2_order_book::providers::deribit::subscribe_to_order_book;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     // config
     let config = Config::read_config();
     config.validate(); 
 
+    // logger
     env_logger::init();
+    println!("Configuration: {:?}", config);
 
-    // extract params 
+    // check provider
+    let provider = config.provider.name.unwrap_or(Provider::None);
+    if provider != Provider::Deribit {
+        panic!("Unsupported provider. Only Deribit is supported. Provided: {:?}", provider)
+    }
+
     let instrument = config.exchange.instrument.clone().unwrap();
-    let depth_limit = config.exchange.depth_limit.unwrap();
-    let provider_type = config.provider.name.clone().unwrap();
 
-    info!("Instrument specified: {}", instrument);
-    info!("Provider type: {:?}", provider_type);
+    // subscire to provider 
+    let order_book = SharedOrderBook::new(config.exchange.depth_limit.unwrap());
 
-    let rt = Runtime::new().unwrap();
-    let order_book = SharedOrderBook::new(depth_limit);
-
-    rt.block_on(async {
-        match subscribe_to_order_book(order_book.clone(), &instrument).await {
-            Ok(_) => {
-                info!("Subscription successful");
-                if let Some(best_bid) = order_book.get_best_bid().await {
-                    info!("Best Bid: {}", best_bid);
-                }
-                if let Some(best_ask) = order_book.get_best_ask().await {
-                    info!("Best Ask: {}", best_ask);
-                }
-            },
-            Err(e) => error!("Subscription error: {:?}", e),
-        }
-    });
+    match providers::deribit::subscribe_to_order_book(order_book.clone(), &instrument).await {
+        Ok(_) => {
+            info!("Subscription successful");
+            if let Some(best_bid) = order_book.get_best_bid().await {
+                println!("Best Bid: {}", best_bid);
+            }
+            if let Some(best_ask) = order_book.get_best_ask().await {
+                println!("Best Ask: {}", best_ask);
+            }
+        },
+        Err(e) => error!("Subscription error: {:?}", e),
+    }
 }

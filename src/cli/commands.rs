@@ -5,31 +5,28 @@ fn build_cli() -> Command {
         .version("1.0")
         .about("Command line interface for the L2 Order Book project") 
         .arg(
+            Arg::new("depth_limit")
+                .short('d')
+                .long("depth_limit")
+                .value_name("DEPTH_LIMIT")
+                .help("Specifies the depth limit for the order book")
+                .required(false),
+        )
+        .arg(
             Arg::new("instrument")
                 .short('i')
                 .long("instrument")
                 .value_name("INSTRUMENT")
                 .help("Specifies the trading instrument")
-                .required(false)
-                .value_parser(clap::value_parser!(String)),
-        )
-        .arg(
-            Arg::new("depth-limit")
-                .short('d')
-                .long("depth-limit")
-                .value_name("DEPTH_LIMIT")
-                .help("Specifies depth limit for the order book")
-                .required(false)
-                .value_parser(clap::value_parser!(String)),
+                .required(false),
         )
         .arg(
             Arg::new("provider")
                 .short('p')
-                .long("provide")
+                .long("provider")
                 .value_name("PROVIDER")
-                .help("Specifies provider name to connect to. Only 'Deribit' at the moment supported.")
-                .required(false)
-                .value_parser(clap::value_parser!(String)),
+                .help("Specifies the provider name")
+                .required(false),
         )
 }
 

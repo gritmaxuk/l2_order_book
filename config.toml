@@ -1,6 +1,6 @@
 [exchange]
-depth_limit = 10 # todo: check properly how it works.
-instrument = "BTC-PERPETUAL" # todo: it does not work by default
+depth_limit = 10
+instrument = "BTC-PERPETUAL"
 
 [provider]
-name = "deribit"
+name = "Deribit"
