@@ -1,7 +1,7 @@
-use std::collections::BTreeMap;
+use log::{debug, info, warn};
 use ordered_float::OrderedFloat;
 use serde::Deserialize;
-use log::{debug, info, warn};
+use std::collections::BTreeMap;
 
 use super::messages::OrderBookUpdate;
 
@@ -66,7 +66,7 @@ impl OrderBook {
     pub fn process_snapshot(&mut self, bids: Vec<OrderBookUpdate>, asks: Vec<OrderBookUpdate>) {
         self.bids.clear();
         self.asks.clear();
-        
+
         for bid in bids {
             let order = Order {
                 price: bid.price,
@@ -74,7 +74,7 @@ impl OrderBook {
             };
             self.add_order(order, "buy");
         }
-        
+
         for ask in asks {
             let order = Order {
                 price: ask.price,
@@ -86,7 +86,10 @@ impl OrderBook {
         self.update_best_bid();
         self.update_best_ask();
 
-        info!("Best Bid: {:?}, Best Ask: {:?}", self.best_bid, self.best_ask);
+        info!(
+            "Best Bid: {:?}, Best Ask: {:?}",
+            self.best_bid, self.best_ask
+        );
         debug!("Order book depth limit: {}", self.bids.len());
     }
 
@@ -103,13 +106,19 @@ impl OrderBook {
             while self.bids.len() > self.depth_limit {
                 let lowest_bid = self.bids.keys().next().cloned().unwrap(); // remove less competetive bid from the top
                 self.bids.remove(&lowest_bid);
-                warn!("Enforced depth limit on bids, removed order at price: {:?}", lowest_bid);
+                warn!(
+                    "Enforced depth limit on bids, removed order at price: {:?}",
+                    lowest_bid
+                );
             }
         } else if side == "sell" {
             while self.asks.len() > self.depth_limit {
                 let highest_ask = self.asks.keys().rev().next().cloned().unwrap(); // remove more competetive ask from the bottom
                 self.asks.remove(&highest_ask);
-                warn!("Enforced depth limit on asks, removed order at price: {:?}", highest_ask);
+                warn!(
+                    "Enforced depth limit on asks, removed order at price: {:?}",
+                    highest_ask
+                );
             }
         }
     }
@@ -188,7 +197,6 @@ mod tests {
         assert_eq!(order_book.best_bid, Some(101.0));
         assert_eq!(order_book.best_ask, Some(102.0));
     }
-
 
     #[test]
     fn test_enforce_depth_limit() {

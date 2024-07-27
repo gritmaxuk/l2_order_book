@@ -1,9 +1,9 @@
-use clap::{Command, Arg};
+use clap::{Arg, Command};
 
 fn build_cli() -> Command {
-    Command::new("L2 Order Book CLI") 
+    Command::new("L2 Order Book CLI")
         .version("1.0")
-        .about("Command line interface for the L2 Order Book project") 
+        .about("Command line interface for the L2 Order Book project")
         .arg(
             Arg::new("depth_limit")
                 .short('d')
@@ -40,9 +40,7 @@ mod tests {
 
     #[test]
     fn test_instrument_argument() {
-        let cmd = build_cli().try_get_matches_from(vec![
-            "test", "--instrument", "BTC-USD"
-        ]);
+        let cmd = build_cli().try_get_matches_from(vec!["test", "--instrument", "BTC-USD"]);
         assert!(cmd.is_ok());
         let matches = cmd.unwrap();
         assert_eq!(matches.get_one::<String>("instrument").unwrap(), "BTC-USD");
@@ -50,9 +48,7 @@ mod tests {
 
     #[test]
     fn test_short_instrument_argument() {
-        let cmd = build_cli().try_get_matches_from(vec![
-            "test", "-i", "ETH-USD"
-        ]);
+        let cmd = build_cli().try_get_matches_from(vec!["test", "-i", "ETH-USD"]);
         assert!(cmd.is_ok());
         let matches = cmd.unwrap();
         assert_eq!(matches.get_one::<String>("instrument").unwrap(), "ETH-USD");

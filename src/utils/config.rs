@@ -82,7 +82,9 @@ impl Config {
         // Extract command-line arguments
         let depth_limit = matches.get_one::<usize>("depth_limit").cloned();
         let instrument = matches.get_one::<String>("instrument").cloned();
-        let provider_name = matches.get_one::<String>("provider").and_then(|s| s.parse().ok());
+        let provider_name = matches
+            .get_one::<String>("provider")
+            .and_then(|s| s.parse().ok());
 
         Config {
             exchange: ExchangeConfig {
@@ -176,9 +178,7 @@ mod tests {
                 depth_limit: Some(10),
                 instrument: Some("BTC-USD".to_string()),
             },
-            provider: ProviderConfig {
-                name: None,
-            },
+            provider: ProviderConfig { name: None },
         };
 
         file_config.merge(env_config);
@@ -234,9 +234,7 @@ mod tests {
                 depth_limit: Some(10),
                 instrument: Some("BTC-USD".to_string()),
             },
-            provider: ProviderConfig {
-                name: None,
-            },
+            provider: ProviderConfig { name: None },
         };
         config.validate();
     }
