@@ -59,11 +59,16 @@ impl From<RawOrderBookData> for OrderBook {
 
 /// Subscribe to the order book channel.
 pub async fn subscribe_to_order_book(order_book: SharedOrderBook, config: &ExchangeConfig) -> Result<(), Box<dyn Error>> {
+    // default provider (does not work without)
+    rustls::crypto::aws_lc_rs::default_provider().install_default().unwrap();
+    
+    // setuo ws stream
     let url = "wss://ws.bitstamp.net";
     let (ws_stream, _) = connect_async(url).await.expect("Failed to connect");
 
     let (mut write, mut read) = ws_stream.split();
 
+    // sbiscribe to channel
     let instrument = config.normalized_instrument().expect("Cannot normalize instrument");
     let subscribe_message = SubscribeMessage {
         event: "bts:subscribe".to_string(),
@@ -72,10 +77,10 @@ pub async fn subscribe_to_order_book(order_book: SharedOrderBook, config: &Excha
         },
     };
 
-    // subscribe 
     let subscribe_message = serde_json::to_string(&subscribe_message)?;
     write.send(Message::Text(subscribe_message)).await?;
 
+    // process messages 
     while let Some(message) = read.next().await {
         match message {
             Ok(Message::Text(text)) => {
