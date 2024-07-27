@@ -18,9 +18,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let order_book = SharedOrderBook::initialise(config.exchange.depth_limit.unwrap());
 
     // setup console and subscribe to provider events
-    let mut user_key_pressed_tx = listen_user_input();
     let ui_cancellation_tx = setup_console_output(order_book.clone());
     let subscribe_canclellation_tx = subscribe_to_provider(config, order_book);
+    let mut user_key_pressed_tx = listen_user_input();
 
     // listen cancellation
     user_key_pressed_tx.recv().await.unwrap();

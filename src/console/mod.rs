@@ -1,6 +1,6 @@
 pub mod ui;
 
-use std::io;
+use std::{env, io};
 
 use crossterm::{event::{EnableMouseCapture, Event, EventStream, KeyCode}, execute, terminal::{self, EnterAlternateScreen}};
 use futures::StreamExt;
@@ -11,6 +11,12 @@ use ui::Ui;
 use crate::core::SharedOrderBook;
 
 pub fn setup_console_output(order_book: SharedOrderBook) -> Option<Sender<()>> {
+    // check if setup debug mode
+    if env::var("RUST_LOG").is_ok() {
+        return None;
+    }
+
+    // init fancy UI
     let (stop_tx, stop_rx) = mpsc::channel(1);
     
     let status = init_terminal(order_book, stop_rx);

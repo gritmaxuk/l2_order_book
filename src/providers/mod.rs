@@ -15,15 +15,16 @@ pub fn subscribe_to_provider(config: Config, order_book: SharedOrderBook) -> Opt
                     order_book,
                     &config.exchange,
                     stop_rx,
-                )
-                .await
+                ).await
                 {
                     eprintln!("Error subscribing to Deribit: {:?}", e);
                 }
             }
             Provider::Bitstamp => {
-                if let Err(e) =
-                    bitstamp::subscribe_to_order_book(order_book.clone(), &config.exchange, stop_rx).await
+                if let Err(e) = bitstamp::subscribe_to_order_book(
+                    order_book.clone(), 
+                    &config.exchange, 
+                    stop_rx).await
                 {
                     eprintln!("Error subscribing to Bitstamp: {:?}", e);
                 }
