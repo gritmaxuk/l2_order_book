@@ -1,6 +1,6 @@
 [exchange]
 depth_limit = 10
-instrument = "BTC-PERPETUAL"
+instrument = "BTC-USD"
 
 [provider]
-name = "Deribit"
+name = "Bitstamp"

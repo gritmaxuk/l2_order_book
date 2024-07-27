@@ -3,8 +3,13 @@
 // todo: update
 
 https://docs.deribit.com/#book-instrument_name-group-depth-interval
+https://www.bitstamp.net/websocket/v2/ --> Chanells 
+https://assets.bitstamp.net/static/webapp/examples/order_book_v2.3610acefe104f01a8dcd4fda1cb88403f368526b.html
 
+deribit -> use package connnect and disconnect gracefully 
+bitstamp -> custom WS implementation example 
 
+//
 
 ## Project Description
 

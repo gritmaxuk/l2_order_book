@@ -94,7 +94,7 @@ impl OrderBook {
     }
 
     fn update_best_bid(&mut self) {
-        self.best_bid = self.bids.keys().rev().next().map(|p| p.into_inner()); // get the price of the highest bid
+        self.best_bid = self.bids.keys().next_back().map(|p| p.into_inner()); // get the price of the highest bid
     }
 
     fn update_best_ask(&mut self) {
@@ -106,16 +106,16 @@ impl OrderBook {
             while self.bids.len() > self.depth_limit {
                 let lowest_bid = self.bids.keys().next().cloned().unwrap(); // remove less competetive bid from the top
                 self.bids.remove(&lowest_bid);
-                warn!(
+                debug!(
                     "Enforced depth limit on bids, removed order at price: {:?}",
                     lowest_bid
                 );
             }
         } else if side == "sell" {
             while self.asks.len() > self.depth_limit {
-                let highest_ask = self.asks.keys().rev().next().cloned().unwrap(); // remove more competetive ask from the bottom
+                let highest_ask = self.asks.keys().next_back().cloned().unwrap(); // remove more competetive ask from the bottom
                 self.asks.remove(&highest_ask);
-                warn!(
+                debug!(
                     "Enforced depth limit on asks, removed order at price: {:?}",
                     highest_ask
                 );

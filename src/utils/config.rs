@@ -11,6 +11,7 @@ const DEFAULT_CONFIG_FILE: &str = "config.toml";
 pub enum Provider {
     None,
     Deribit,
+    Bitstamp,
 }
 
 impl FromStr for Provider {
@@ -38,6 +39,12 @@ pub struct ExchangeConfig {
     pub depth_limit: Option<usize>,
     #[envconfig(from = "EXCHANGE_INSTRUMENT")]
     pub instrument: Option<String>,
+}
+
+impl ExchangeConfig {
+    pub fn normalized_instrument(&self) -> Option<String>{
+        self.instrument.as_ref().map(|instrument| instrument.to_lowercase().replace('-', "").to_string())
+    }
 }
 
 #[derive(Deserialize, Debug, Default, Envconfig, PartialEq)]
