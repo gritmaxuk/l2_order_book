@@ -1,2 +1,2 @@
-pub mod deribit;
 pub mod bitstamp;
+pub mod deribit;

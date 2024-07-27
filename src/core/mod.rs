@@ -38,4 +38,26 @@ impl SharedOrderBook {
         let order_book = self.inner.read().await;
         order_book.asks.len()
     }
+
+    pub async fn get_bids(&self) -> Option<Vec<f64>> {
+        let order_book = self.inner.read().await;
+        Some(
+            order_book
+                .bids
+                .keys()
+                .map(|k| k.into_inner())
+                .collect::<Vec<_>>(),
+        )
+    }
+
+    pub async fn get_asks(&self) -> Option<Vec<f64>> {
+        let order_book = self.inner.read().await;
+        Some(
+            order_book
+                .asks
+                .keys()
+                .map(|k| k.into_inner())
+                .collect::<Vec<_>>(),
+        )
+    }
 }

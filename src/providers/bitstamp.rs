@@ -1,10 +1,10 @@
-use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
+use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 
-use crate::{core::SharedOrderBook, utils::config::ExchangeConfig};
 use crate::core::messages::OrderBookUpdate;
+use crate::{core::SharedOrderBook, utils::config::ExchangeConfig};
 use log::{debug, error};
 
 #[derive(Serialize)]
@@ -37,34 +37,43 @@ struct OrderBook {
 
 impl From<RawOrderBookData> for OrderBook {
     fn from(raw: RawOrderBookData) -> Self {
-        let bids = raw.bids.into_iter().map(|b| {
-            OrderBookUpdate {
+        let bids = raw
+            .bids
+            .into_iter()
+            .map(|b| OrderBookUpdate {
                 price: b[0].parse().unwrap_or(0.0),
                 quantity: b[1].parse().unwrap_or(0.0),
                 side: "buy".to_string(),
-            }
-        }).collect();
+            })
+            .collect();
 
-        let asks = raw.asks.into_iter().map(|a| {
-            OrderBookUpdate {
+        let asks = raw
+            .asks
+            .into_iter()
+            .map(|a| OrderBookUpdate {
                 price: a[0].parse().unwrap_or(0.0),
                 quantity: a[1].parse().unwrap_or(0.0),
                 side: "sell".to_string(),
-            }
-        }).collect();
+            })
+            .collect();
 
         OrderBook { bids, asks }
     }
 }
 
 /// Subscribe to the order book channel.
-pub async fn subscribe_to_order_book(order_book: SharedOrderBook, config: &ExchangeConfig) -> Result<(), Box<dyn Error>> {
+pub async fn subscribe_to_order_book(
+    order_book: SharedOrderBook,
+    config: &ExchangeConfig,
+) -> Result<(), Box<dyn Error>> {
     let url = "wss://ws.bitstamp.net";
     let (ws_stream, _) = connect_async(url).await.expect("Failed to connect");
 
     let (mut write, mut read) = ws_stream.split();
 
-    let instrument = config.normalized_instrument().expect("Cannot normalize instrument");
+    let instrument = config
+        .normalized_instrument()
+        .expect("Cannot normalize instrument");
     let subscribe_message = SubscribeMessage {
         event: "bts:subscribe".to_string(),
         data: SubscribeData {
@@ -72,7 +81,7 @@ pub async fn subscribe_to_order_book(order_book: SharedOrderBook, config: &Excha
         },
     };
 
-    // subscribe 
+    // subscribe
     let subscribe_message = serde_json::to_string(&subscribe_message)?;
     write.send(Message::Text(subscribe_message)).await?;
 
@@ -84,14 +93,19 @@ pub async fn subscribe_to_order_book(order_book: SharedOrderBook, config: &Excha
 
                     // raw order book to OrderBook struct
                     let order_book_update: OrderBook = order_book_data.into();
-                    
+
                     // procced order book snapshot
-                    order_book.process_snapshot(order_book_update.bids.clone(), order_book_update.asks.clone()).await;
+                    order_book
+                        .process_snapshot(
+                            order_book_update.bids.clone(),
+                            order_book_update.asks.clone(),
+                        )
+                        .await;
 
                     debug!("Order Book: {:?}", order_book_update);
                 } else {
                     //error!("Failed to parse Order: {}", text);
-                    // SKIP other OK messages 
+                    // SKIP other OK messages
                 }
             }
             Ok(_) => {}

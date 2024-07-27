@@ -25,16 +25,16 @@ pub async fn subscribe_to_order_book(
             Ok(subscription_meassage) => {
                 if let Some((bids, asks)) = parse(subscription_meassage) {
                     order_book.process_snapshot(bids, asks).await; // snapshot update, data equal to depth limit
-                    
+
                     debug!(
-                    "Order book updated for instrument: {}",
-                    config.instrument.clone().unwrap()
+                        "Order book updated for instrument: {}",
+                        config.instrument.clone().unwrap()
                     );
                 }
             }
             Err(e) => {
                 error!("Error in subscription message: {:?}", e);
-            },
+            }
         }
     }
 
@@ -45,7 +45,7 @@ async fn create_client() -> Result<(DeribitAPIClient, DeribitSubscriptionClient)
     let drb = deribit::DeribitBuilder::default()
         .build()
         .expect("Cannot create deribit client");
-    
+
     drb.connect().await
 }
 
