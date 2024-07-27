@@ -21,4 +21,4 @@ deribit = "0.3.3"
 envconfig = "0.10"
 rustls = "0.23"
 ratatui = "0.27.0"
-crossterm = "0.27.0"
+crossterm = { version = "0.27.0", features = ["event-stream"] }

@@ -12,10 +12,12 @@ use deribit::{
 };
 use futures::StreamExt;
 use log::{debug, error};
+use tokio::sync::mpsc::Receiver;
 
 pub async fn subscribe_to_order_book(
     order_book: SharedOrderBook,
     config: &ExchangeConfig,
+    stop_rx: Receiver<()>,
 ) -> Result<(), Error> {
     let (mut client, mut subscription) = create_client().await?;
 
