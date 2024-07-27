@@ -12,14 +12,6 @@ use tokio::time;
 
 use crate::core::SharedOrderBook;
 
-#[derive(Debug, Clone)]
-pub struct UiState {
-    pub best_bid: Option<(f64, f64)>,
-    pub best_ask: Option<(f64, f64)>,
-    pub bids: Vec<(f64, f64)>,
-    pub asks: Vec<(f64, f64)>,
-}
-
 pub struct Ui {
     order_book: SharedOrderBook,
     shutdown_tx: mpsc::Sender<()>,
@@ -74,18 +66,13 @@ impl Ui {
         // Best prices table
         let best_prices_table = Table::new(
             vec![best_prices_row],
-            vec![Constraint::Percentage(50), Constraint::Percentage(50)],
+            vec![Constraint::Percentage(20), Constraint::Percentage(20)],
         )
-        .header(Row::new(vec![
-            Cell::from("Best Ask Price"),
-            Cell::from("Best Bid Price"),
-        ]))
         .block(
             Block::default()
                 .borders(Borders::ALL)
                 .title("Best Prices"),
-        )
-        .widths(&[Constraint::Percentage(20), Constraint::Percentage(20)]);
+        );
 
         // Order book rows
         let mut rows = vec![];

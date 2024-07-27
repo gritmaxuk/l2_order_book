@@ -25,3 +25,10 @@ pub fn init_terminal(order_book: SharedOrderBook, shutdown_tx: mpsc::Sender<()>)
 
     Ok(handler)
 }
+
+pub fn dispose_terminal() -> std::result::Result<(), std::boxed::Box<(dyn std::error::Error + 'static)>> { 
+    terminal::disable_raw_mode()?;
+    execute!(std::io::stdout(), terminal::LeaveAlternateScreen)?;
+
+    Ok(())
+}

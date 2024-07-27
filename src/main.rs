@@ -3,7 +3,6 @@ use l2_order_book::{providers, console};
 use l2_order_book::utils::config::{Config, Provider};
 use tokio::sync::mpsc;
 use tokio::task;
-use crossterm::{execute, terminal};
 
 
 #[tokio::main]
@@ -26,7 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a shutdown channel
     let (shutdown_tx, mut shutdown_rx) = mpsc::channel(1);
 
-    // Termainal UI
+    // console UI
     let ui_order_book = order_book.clone();
     let ui_handler = console::init_terminal(ui_order_book, shutdown_tx.clone())?;
 
@@ -75,8 +74,5 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Clean up terminal
-    terminal::disable_raw_mode()?;
-    execute!(std::io::stdout(), terminal::LeaveAlternateScreen)?;
-
-    Ok(())
+    console::dispose_terminal()
 }
