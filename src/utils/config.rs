@@ -116,6 +116,9 @@ impl Config {
         if self.exchange.depth_limit.is_none() {
             panic!("Depth limit not specified in the configuration!");
         }
+        if !matches!(self.exchange.depth_limit.unwrap(), 1 | 10 | 20) {
+            panic!("Depth limit must be one of the following values: 1, 10, or 20!");
+        }
         if self.provider.name.is_none() {
             panic!("Provider type not specified in the configuration!");
         }
@@ -233,6 +236,21 @@ mod tests {
             },
             provider: ProviderConfig {
                 name: None,
+            },
+        };
+        config.validate();
+    }
+
+    #[test]
+    #[should_panic(expected = "Depth limit must be one of the following values: 1, 10, or 20!")]
+    fn test_validate_invalid_depth_limit() {
+        let config = Config {
+            exchange: ExchangeConfig {
+                depth_limit: Some(5),
+                instrument: Some("BTC-USD".to_string()),
+            },
+            provider: ProviderConfig {
+                name: Some(Provider::Deribit),
             },
         };
         config.validate();
