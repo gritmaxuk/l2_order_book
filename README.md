@@ -31,7 +31,6 @@ Ensure you have a `config.toml` file in the root directory with the following st
 
 ```toml
 [exchange]
-url = "wss://your-selected-exchange.com/websocket"
 depth_limit = 10
 ```
 
