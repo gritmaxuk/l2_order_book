@@ -42,8 +42,10 @@ pub struct ExchangeConfig {
 }
 
 impl ExchangeConfig {
-    pub fn normalized_instrument(&self) -> Option<String>{
-        self.instrument.as_ref().map(|instrument| instrument.to_lowercase().replace('-', "").to_string())
+    pub fn normalized_instrument(&self) -> Option<String> {
+        self.instrument
+            .as_ref()
+            .map(|instrument| instrument.to_lowercase().replace('-', "").to_string())
     }
 }
 

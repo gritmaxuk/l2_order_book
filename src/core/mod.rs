@@ -13,7 +13,7 @@ pub struct SharedOrderBook {
 }
 
 impl SharedOrderBook {
-    pub fn new(depth_limit: usize) -> Self {
+    pub fn initialise(depth_limit: usize) -> Self {
         SharedOrderBook {
             inner: Arc::new(RwLock::new(OrderBook::new(depth_limit))),
         }
@@ -37,5 +37,27 @@ impl SharedOrderBook {
     pub async fn get_used_depth_limit(&self) -> usize {
         let order_book = self.inner.read().await;
         order_book.asks.len()
+    }
+
+    pub async fn get_bids(&self) -> Option<Vec<f64>> {
+        let order_book = self.inner.read().await;
+        Some(
+            order_book
+                .bids
+                .keys()
+                .map(|k| k.into_inner())
+                .collect::<Vec<_>>(),
+        )
+    }
+
+    pub async fn get_asks(&self) -> Option<Vec<f64>> {
+        let order_book = self.inner.read().await;
+        Some(
+            order_book
+                .asks
+                .keys()
+                .map(|k| k.into_inner())
+                .collect::<Vec<_>>(),
+        )
     }
 }
