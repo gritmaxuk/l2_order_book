@@ -7,6 +7,7 @@ use ratatui::style::{Color, Style};
 use ratatui::widgets::{Block, Borders, Cell, Row, Table};
 use ratatui::{Frame, Terminal};
 
+use tokio::sync::mpsc;
 use tokio::time;
 
 use crate::core::SharedOrderBook;
@@ -21,11 +22,12 @@ pub struct UiState {
 
 pub struct Ui {
     order_book: SharedOrderBook,
+    shutdown_tx: mpsc::Sender<()>,
 }
 
 impl Ui {
-    pub fn new(order_book: SharedOrderBook) -> Self {
-        Self { order_book }
+    pub fn new(order_book: SharedOrderBook, shutdown_tx: mpsc::Sender<()>) -> Self {
+        Self { order_book, shutdown_tx }
     }
 
     pub async fn run<B: Backend>(
@@ -33,6 +35,15 @@ impl Ui {
         terminal: &mut Terminal<B>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         loop {
+            if event::poll(Duration::from_millis(100))? {
+                if let Event::Key(key) = event::read()? {
+                    if key.code == KeyCode::Esc || key.code == KeyCode::Char('q') {
+                        self.shutdown_tx.send(()).await?;
+                        return Ok(()) // exit
+                    }
+                }
+            }
+
             let best_bid = self.order_book.get_best_bid().await.unwrap_or_default();
             let best_ask = self.order_book.get_best_ask().await.unwrap_or_default();
             let bids = self.order_book.get_bids().await.unwrap_or_default();

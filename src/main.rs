@@ -1,10 +1,10 @@
 use l2_order_book::core::SharedOrderBook;
-use l2_order_book::{providers, terminal};
+use l2_order_book::{providers, console};
 use l2_order_book::utils::config::{Config, Provider};
-
-use std::io;
 use tokio::sync::mpsc;
 use tokio::task;
+use crossterm::{execute, terminal};
+
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -23,9 +23,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // create shared order book
     let order_book = SharedOrderBook::new(config.exchange.depth_limit.unwrap());
 
+    // Create a shutdown channel
+    let (shutdown_tx, mut shutdown_rx) = mpsc::channel(1);
+
     // Termainal UI
     let ui_order_book = order_book.clone();
-    let ui_handler = terminal::init_terminal(ui_order_book)?;
+    let ui_handler = console::init_terminal(ui_order_book, shutdown_tx.clone())?;
 
     // logic
     let logic_handler = task::spawn(async move { 
@@ -56,6 +59,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
+    // Wait for the UI to shut down
+    shutdown_rx.recv().await;
+
+    // Cancel all tasks
+    ui_handler.abort();
+    logic_handler.abort();
+
     // Wait for all tasks to complete
     let all_tasks = vec![ui_handler, logic_handler];
     for task in all_tasks {
@@ -64,18 +74,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-
-    // Wait for the UI to shut down
-    //shutdown_rx.recv().await;
-
     // Clean up terminal
-    // terminal::disable_raw_mode()?;
-    // execute!(
-    //     terminal.backend_mut(),
-    //     LeaveAlternateScreen,
-    //     DisableMouseCapture
-    // )?;
-    // terminal.show_cursor()?;
+    terminal::disable_raw_mode()?;
+    execute!(std::io::stdout(), terminal::LeaveAlternateScreen)?;
 
     Ok(())
 }
