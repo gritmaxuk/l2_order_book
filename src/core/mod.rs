@@ -6,7 +6,7 @@ use order_book::OrderBook;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-/// A shared for thread-safty read-write lock for the order book.
+/// A shared for thread-safety read-write lock for the order book.
 #[derive(Clone)]
 pub struct SharedOrderBook {
     inner: Arc<RwLock<OrderBook>>,
@@ -39,25 +39,21 @@ impl SharedOrderBook {
         order_book.asks.len()
     }
 
-    pub async fn get_bids(&self) -> Option<Vec<f64>> {
+    pub async fn get_bids(&self) -> Vec<f64> {
         let order_book = self.inner.read().await;
-        Some(
-            order_book
-                .bids
-                .keys()
-                .map(|k| k.into_inner())
-                .collect::<Vec<_>>(),
-        )
+        order_book
+            .bids
+            .keys()
+            .map(|k| k.into_inner())
+            .collect::<Vec<_>>()
     }
 
-    pub async fn get_asks(&self) -> Option<Vec<f64>> {
+    pub async fn get_asks(&self) -> Vec<f64> {
         let order_book = self.inner.read().await;
-        Some(
-            order_book
-                .asks
-                .keys()
-                .map(|k| k.into_inner())
-                .collect::<Vec<_>>(),
-        )
+        order_book
+            .asks
+            .keys()
+            .map(|k| k.into_inner())
+            .collect::<Vec<_>>()
     }
 }

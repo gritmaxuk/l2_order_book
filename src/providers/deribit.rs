@@ -1,12 +1,12 @@
 use crate::{
-    core::{messages::OrderBookUpdate, SharedOrderBook},
+    core::{messages::OrderBookUpdate, messages::Side, SharedOrderBook},
     utils::config::ExchangeConfig,
 };
 use anyhow::Error;
 use deribit::{
     models::{
-        PublicSubscribeRequest, PublicUnsubscribeRequest, SubscriptionData, SubscriptionMessage, SubscriptionParams,
-        WithChannel,
+        PublicSubscribeRequest, PublicUnsubscribeRequest, SubscriptionData, SubscriptionMessage,
+        SubscriptionParams, WithChannel,
     },
     DeribitAPIClient, DeribitSubscriptionClient,
 };
@@ -24,7 +24,7 @@ pub async fn subscribe_to_order_book(
     subscribe_to_instrument(config, &mut client).await?;
 
     loop {
-        tokio::select! { 
+        tokio::select! {
             _ = stop_rx.recv() => {
                 unsubscribe_from_instrument(config, &mut client).await?;
                 break;
@@ -81,7 +81,7 @@ async fn unsubscribe_from_instrument(
 ) -> Result<(), Error> {
     info!("Stopping WebSocket stream");
     println!("Requesting to close WebSocket stream for Deribit");
-    
+
     let instrument = config.instrument.clone().unwrap();
     let depth_limit = config.depth_limit.unwrap();
 
@@ -109,7 +109,7 @@ fn parse(msg: SubscriptionMessage) -> Option<(Vec<OrderBookUpdate>, Vec<OrderBoo
                 .map(|(price, quantity)| OrderBookUpdate {
                     price,
                     quantity,
-                    side: "sell".to_string(),
+                    side: Side::Sell,
                 })
                 .collect();
             let bids: Vec<OrderBookUpdate> = data
@@ -118,7 +118,7 @@ fn parse(msg: SubscriptionMessage) -> Option<(Vec<OrderBookUpdate>, Vec<OrderBoo
                 .map(|(price, quantity)| OrderBookUpdate {
                     price,
                     quantity,
-                    side: "buy".to_string(),
+                    side: Side::Buy,
                 })
                 .collect();
 

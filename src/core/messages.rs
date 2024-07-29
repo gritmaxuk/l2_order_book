@@ -1,10 +1,16 @@
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
+pub enum Side {
+    Buy,
+    Sell,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct OrderBookUpdate {
     pub price: f64,
     pub quantity: f64,
-    pub side: String,
+    pub side: Side,
 }
 
 #[derive(Debug, Clone, Deserialize)]

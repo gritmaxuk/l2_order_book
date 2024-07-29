@@ -1,11 +1,11 @@
 use futures::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
-use tokio::sync::mpsc::Receiver;
 use std::error::Error;
+use tokio::sync::mpsc::Receiver;
 
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 
-use crate::core::messages::OrderBookUpdate;
+use crate::core::messages::{OrderBookUpdate, Side};
 use crate::{core::SharedOrderBook, utils::config::ExchangeConfig};
 use log::{debug, info};
 
@@ -47,7 +47,7 @@ impl From<RawOrderBookData> for OrderBook {
             .map(|b| OrderBookUpdate {
                 price: b[0].parse().unwrap_or(0.0),
                 quantity: b[1].parse().unwrap_or(0.0),
-                side: "buy".to_string(),
+                side: Side::Buy,
             })
             .collect();
 
@@ -57,7 +57,7 @@ impl From<RawOrderBookData> for OrderBook {
             .map(|a| OrderBookUpdate {
                 price: a[0].parse().unwrap_or(0.0),
                 quantity: a[1].parse().unwrap_or(0.0),
-                side: "sell".to_string(),
+                side: Side::Sell,
             })
             .collect();
 
@@ -72,14 +72,18 @@ pub async fn subscribe_to_order_book(
     mut stop_rx: Receiver<()>,
 ) -> Result<(), Box<dyn Error>> {
     // default provider (does not work without)
-    rustls::crypto::aws_lc_rs::default_provider().install_default().unwrap();
+    rustls::crypto::aws_lc_rs::default_provider()
+        .install_default()
+        .unwrap();
 
     // setuo ws stream
-    let (ws_stream, _) = connect_async(BITSTAMP_WS_URL).await.expect("Failed to connect");
+    let (ws_stream, _) = connect_async(BITSTAMP_WS_URL)
+        .await
+        .expect("Failed to connect");
 
     let (mut write, mut read) = ws_stream.split();
 
-    // sbiscribe to channel
+    // subscribe to channel
     let instrument = config
         .normalized_instrument()
         .expect("Cannot normalize instrument");
@@ -96,15 +100,15 @@ pub async fn subscribe_to_order_book(
     // process messages
     loop {
         tokio::select! {
-            Some(message) = read.next() => { 
+            Some(message) = read.next() => {
                 match message {
                     Ok(Message::Text(text)) => {
                         if let Ok(raw_order_book) = serde_json::from_str::<RawOrderBook>(&text) {
                             let order_book_data: RawOrderBookData = raw_order_book.data;
-        
+
                             // raw order book to OrderBook struct
                             let order_book_update: OrderBook = order_book_data.into();
-        
+
                             // procced order book snapshot
                             order_book
                                 .process_snapshot(
@@ -112,7 +116,7 @@ pub async fn subscribe_to_order_book(
                                     order_book_update.asks.clone(),
                                 )
                                 .await;
-        
+
                             debug!("Order Book: {:?}", order_book_update);
                         } else {
                             //error!("Failed to parse Order: {}", text);
@@ -135,7 +139,7 @@ pub async fn subscribe_to_order_book(
                         channel: format!("order_book_{}", instrument),
                     },
                 };
-            
+
                 let unsubscribe_message = serde_json::to_string(&unsubscribe_message)?;
                 write.send(Message::Text(unsubscribe_message)).await?;
                 info!("Unsubscribed from order_book_{}", instrument);
