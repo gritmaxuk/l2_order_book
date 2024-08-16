@@ -16,7 +16,7 @@ pub struct Ui {
 
 impl Ui {
     pub fn new(order_book: SharedOrderBook) -> Self {
-        Self { order_book}
+        Self { order_book }
     }
 
     pub async fn run<B: Backend>(
@@ -26,8 +26,8 @@ impl Ui {
         loop {
             let best_bid = self.order_book.get_best_bid().await.unwrap_or_default();
             let best_ask = self.order_book.get_best_ask().await.unwrap_or_default();
-            let bids = self.order_book.get_bids().await.unwrap_or_default();
-            let asks = self.order_book.get_asks().await.unwrap_or_default();
+            let bids = self.order_book.get_bids().await;
+            let asks = self.order_book.get_asks().await;
 
             terminal.draw(|f| {
                 self.draw_ui(f, best_bid, best_ask, bids, asks);
@@ -42,26 +42,29 @@ impl Ui {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(1)
-            .constraints([Constraint::Length(3), Constraint::Min(1), Constraint::Length(1)].as_ref())
+            .constraints(
+                [
+                    Constraint::Length(3),
+                    Constraint::Min(1),
+                    Constraint::Length(1),
+                ]
+                .as_ref(),
+            )
             .split(f.size());
-    
+
         // Best prices row
         let best_prices_row = Row::new(vec![
             Cell::from(format!("{}", best_ask)).style(Style::default().fg(Color::Green)),
             Cell::from(format!("{}", best_bid)).style(Style::default().fg(Color::Red)),
         ]);
-    
+
         // Best prices table
         let best_prices_table = Table::new(
             vec![best_prices_row],
             vec![Constraint::Percentage(20), Constraint::Percentage(20)],
         )
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Best Prices"),
-        );
-    
+        .block(Block::default().borders(Borders::ALL).title("Best Prices"));
+
         // Order book rows
         let mut rows = vec![];
         let len = bids.len().max(asks.len());
@@ -73,7 +76,7 @@ impl Ui {
                 Cell::from(format!("{}", bid)).style(Style::default().fg(Color::Blue)),
             ]));
         }
-    
+
         // Order book table
         let order_book_table = Table::new(
             rows,
@@ -83,19 +86,25 @@ impl Ui {
             Cell::from("Ask Price"),
             Cell::from("Bid Price"),
         ]))
-        .block(Block::default().borders(Borders::ALL).title("All Order Book Prices"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("All Order Book Prices"),
+        )
         .widths([Constraint::Percentage(20), Constraint::Percentage(20)]);
-    
+
         // Exit info row
-        let exit_info_row = Row::new(vec![Cell::from("Press Esc or q to exit").style(Style::default().italic())]);
-    
+        let exit_info_row = Row::new(vec![
+            Cell::from("Press Esc or q to exit").style(Style::default().italic())
+        ]);
+
         // Exit info table
         let exit_info_table = Table::new(vec![exit_info_row], vec![Constraint::Percentage(100)])
             .block(Block::default().borders(Borders::NONE));
-    
+
         // Render the tables
         f.render_widget(best_prices_table, chunks[0]);
         f.render_widget(order_book_table, chunks[1]);
         f.render_widget(exit_info_table, chunks[2]);
-    }    
+    }
 }

@@ -5,7 +5,6 @@ use l2_order_book::utils::config::Config;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-
     // config
     let config = Config::read_config();
     config.validate();
@@ -32,6 +31,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(subscribe_canclellation_tx) = subscribe_canclellation_tx {
         subscribe_canclellation_tx.send(()).await?;
     }
-    
+
     Ok(())
 }

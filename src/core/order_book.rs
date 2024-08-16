@@ -3,7 +3,7 @@ use ordered_float::OrderedFloat;
 use serde::Deserialize;
 use std::collections::BTreeMap;
 
-use super::messages::OrderBookUpdate;
+use super::messages::{OrderBookUpdate, Side};
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct Order {
@@ -35,31 +35,37 @@ impl OrderBook {
         }
     }
 
-    pub fn add_order(&mut self, order: Order, side: &str) {
+    pub fn add_order(&mut self, order: Order, side: Side) {
         let price = OrderedFloat(order.price);
-        if side == "buy" {
-            self.bids.insert(price, order);
-            self.update_best_bid();
-            self.enforce_depth_limit("buy");
-            debug!("Added order to bids: {:?}", self.bids.get(&price));
-        } else if side == "sell" {
-            self.asks.insert(price, order);
-            self.update_best_ask();
-            self.enforce_depth_limit("sell");
-            debug!("Added order to asks: {:?}", self.asks.get(&price));
+        match side {
+            Side::Buy => {
+                self.bids.insert(price, order);
+                self.update_best_bid();
+                self.enforce_depth_limit(side);
+                debug!("Added order to bids: {:?}", self.bids.get(&price));
+            }
+            Side::Sell => {
+                self.asks.insert(price, order);
+                self.update_best_ask();
+                self.enforce_depth_limit(side);
+                debug!("Added order to asks: {:?}", self.asks.get(&price));
+            }
         }
     }
 
-    pub fn remove_order(&mut self, price: f64, side: &str) {
+    pub fn remove_order(&mut self, price: f64, side: Side) {
         let price = OrderedFloat(price);
-        if side == "buy" {
-            self.bids.remove(&price);
-            self.update_best_bid();
-            warn!("Removed order from bids at price: {:?}", price);
-        } else if side == "sell" {
-            self.asks.remove(&price);
-            self.update_best_ask();
-            warn!("Removed order from asks at price: {:?}", price);
+        match side {
+            Side::Buy => {
+                self.bids.remove(&price);
+                self.update_best_bid();
+                warn!("Removed order from bids at price: {:?}", price);
+            }
+            Side::Sell => {
+                self.asks.remove(&price);
+                self.update_best_ask();
+                warn!("Removed order from asks at price: {:?}", price);
+            }
         }
     }
 
@@ -72,7 +78,7 @@ impl OrderBook {
                 price: bid.price,
                 quantity: bid.quantity,
             };
-            self.add_order(order, "buy");
+            self.add_order(order, Side::Buy);
         }
 
         for ask in asks {
@@ -80,7 +86,7 @@ impl OrderBook {
                 price: ask.price,
                 quantity: ask.quantity,
             };
-            self.add_order(order, "sell");
+            self.add_order(order, Side::Sell);
         }
 
         self.update_best_bid();
@@ -101,24 +107,27 @@ impl OrderBook {
         self.best_ask = self.asks.keys().next().map(|p| p.into_inner()); // get the price of the lowest ask
     }
 
-    fn enforce_depth_limit(&mut self, side: &str) {
-        if side == "buy" {
-            while self.bids.len() > self.depth_limit {
-                let lowest_bid = self.bids.keys().next().cloned().unwrap(); // remove less competetive bid from the top
-                self.bids.remove(&lowest_bid);
-                debug!(
-                    "Enforced depth limit on bids, removed order at price: {:?}",
-                    lowest_bid
-                );
+    fn enforce_depth_limit(&mut self, side: Side) {
+        match side {
+            Side::Buy => {
+                while self.bids.len() > self.depth_limit {
+                    let lowest_bid = self.bids.keys().next().cloned().unwrap(); // remove less competetive bid from the top
+                    self.bids.remove(&lowest_bid);
+                    debug!(
+                        "Enforced depth limit on bids, removed order at price: {:?}",
+                        lowest_bid
+                    );
+                }
             }
-        } else if side == "sell" {
-            while self.asks.len() > self.depth_limit {
-                let highest_ask = self.asks.keys().next_back().cloned().unwrap(); // remove more competetive ask from the bottom
-                self.asks.remove(&highest_ask);
-                debug!(
-                    "Enforced depth limit on asks, removed order at price: {:?}",
-                    highest_ask
-                );
+            Side::Sell => {
+                while self.asks.len() > self.depth_limit {
+                    let highest_ask = self.asks.keys().next_back().cloned().unwrap(); // remove more competetive ask from the bottom
+                    self.asks.remove(&highest_ask);
+                    debug!(
+                        "Enforced depth limit on asks, removed order at price: {:?}",
+                        highest_ask
+                    );
+                }
             }
         }
     }
@@ -143,8 +152,7 @@ mod tests {
             price: 100.0,
             quantity: 1.0,
         };
-        order_book.add_order(order.clone(), "buy");
-
+        order_book.add_order(order.clone(), Side::Buy);
         assert_eq!(order_book.bids.len(), 1);
         assert_eq!(order_book.bids[&OrderedFloat(100.0)], order);
     }
@@ -156,8 +164,8 @@ mod tests {
             price: 100.0,
             quantity: 1.0,
         };
-        order_book.add_order(order.clone(), "buy");
-        order_book.remove_order(100.0, "buy");
+        order_book.add_order(order.clone(), Side::Buy);
+        order_book.remove_order(100.0, Side::Buy);
 
         assert_eq!(order_book.bids.len(), 0);
     }
@@ -169,24 +177,24 @@ mod tests {
             OrderBookUpdate {
                 price: 100.0,
                 quantity: 1.0,
-                side: "buy".to_string(),
+                side: Side::Buy,
             },
             OrderBookUpdate {
                 price: 101.0,
                 quantity: 2.0,
-                side: "buy".to_string(),
+                side: Side::Buy,
             },
         ];
         let asks = vec![
             OrderBookUpdate {
                 price: 102.0,
                 quantity: 1.0,
-                side: "sell".to_string(),
+                side: Side::Sell,
             },
             OrderBookUpdate {
                 price: 103.0,
                 quantity: 2.0,
-                side: "sell".to_string(),
+                side: Side::Sell,
             },
         ];
 
@@ -213,9 +221,9 @@ mod tests {
             price: 102.0,
             quantity: 1.0,
         };
-        order_book.add_order(order1, "buy");
-        order_book.add_order(order2, "buy");
-        order_book.add_order(order3, "buy");
+        order_book.add_order(order1, Side::Buy);
+        order_book.add_order(order2, Side::Buy);
+        order_book.add_order(order3, Side::Buy);
 
         assert_eq!(order_book.bids.len(), 2);
         assert!(order_book.bids.contains_key(&OrderedFloat(101.0)));
