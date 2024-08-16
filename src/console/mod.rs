@@ -3,7 +3,7 @@ pub mod ui;
 use std::{env, io};
 
 use crossterm::{
-    event::{EnableMouseCapture, Event, EventStream, KeyCode},
+    event::{Event, EventStream, KeyCode},
     execute,
     terminal::{self, EnterAlternateScreen},
 };
@@ -41,7 +41,7 @@ fn init_terminal(
     terminal::enable_raw_mode()?;
 
     let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    execute!(stdout, EnterAlternateScreen)?;
 
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;

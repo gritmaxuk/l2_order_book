@@ -25,11 +25,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     user_key_pressed_tx.recv().await.unwrap();
 
     // clean up and cancel all tasks
-    if let Some(ui_cancellation_tx) = ui_cancellation_tx {
-        ui_cancellation_tx.send(()).await?;
-    }
     if let Some(subscribe_canclellation_tx) = subscribe_canclellation_tx {
         subscribe_canclellation_tx.send(()).await?;
+    }
+    if let Some(ui_cancellation_tx) = ui_cancellation_tx {
+        ui_cancellation_tx.send(()).await?;
     }
 
     Ok(())
